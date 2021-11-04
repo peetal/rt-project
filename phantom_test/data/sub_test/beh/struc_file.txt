@@ -1,0 +1,5 @@
+Structual dicoms for this subject: /home/rtfmri/Documents/bridge/20211026.sub_test.21.10.21_11_06_20_DST_1.3.12.2.1107.5.2.43.166179/struc, taking 0.004286289215087891s 
+The highres T1w image: /home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/struc_nii/Struc.nii, taking 1.9353699684143066s 
+The highres T1w brain: /home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/struc_nii/Struc_brain.nii.gz, taking 4.042619228363037s 
+The highres T1w brain WM seg: /home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/struc_nii/func2struc_fast_wmseg.nii.gz, taking 156.2214641571045s 
+Structrual image preprocessing takes 162.20386862754822s 
