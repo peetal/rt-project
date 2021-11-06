@@ -1,3 +1,6 @@
+#import ctypes
+#xlib = ctypes.cdll.LoadLibrary('libX11.so')
+#xlib.XInitThreads()
 from psychopy import core, gui, visual, data, logging, info
 from psychopy.hardware import keyboard
 from psychopy.constants import NOT_STARTED, STARTED, FINISHED
