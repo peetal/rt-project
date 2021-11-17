@@ -1,6 +1,6 @@
-#import ctypes
-#xlib = ctypes.cdll.LoadLibrary('libX11.so')
-#xlib.XInitThreads()
+import ctypes
+xlib = ctypes.cdll.LoadLibrary('libX11.so')
+xlib.XInitThreads()
 from psychopy import core, gui, visual, data, logging, info
 from psychopy.hardware import keyboard
 from psychopy.constants import NOT_STARTED, STARTED, FINISHED
@@ -49,8 +49,8 @@ params = {
     'between_block_duration': 12.0,
     # display parameters
     'full_screen': True,
-    'screen_id': 0,
-    'screen_resolution': (3072,1920),
+    'screen_id': 1,
+    'screen_resolution': (720,480),
     'frame_rate': 0.0,
     'frame_duration': 0.0,
     'frame_tolerance': 0.001,
