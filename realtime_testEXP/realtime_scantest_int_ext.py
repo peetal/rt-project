@@ -4,7 +4,8 @@
 from psychopy import core, gui, visual, data, logging, info
 from psychopy.hardware import keyboard
 from psychopy.constants import NOT_STARTED, STARTED, FINISHED
-import time, json, os, glob
+import json, os, glob
+import time as pythontime
 import numpy as np
 import pandas as pd
 from psychopy.hardware.emulator import launchScan
@@ -69,7 +70,7 @@ params = {
 
 wait_trigger_text = 'Please wait for the experiment to start :)'
 ext_text = 'For this block, please focus on the EXTERNAL details of the presented image.'
-int_text = 'For this block, please focus on the Internal thoughts associated with the presented image.'
+int_text = 'For this block, please focus on the INTERNAL thoughts associated with the presented image.'
 
 #------------------------------------------------------------------------------
 # Setup results file
@@ -79,6 +80,7 @@ out_dir = os.path.join(expDir, f"sub_{expInfo['sub_id']}", f"run_{expInfo['run']
 if not os.path.isdir(out_dir): 
     os.makedirs(out_dir)
 out_csv = os.path.join(out_dir, f"timing_output_{expInfo['cond']}.csv")
+out_json = os.path.join(out_dir, f"timing_output_{expInfo['cond']}.json")
 
 #------------------------------------------------------------------------------
 # Helper function
@@ -184,6 +186,10 @@ def instruction(text):
         # check for quit (typically the Esc key)
         if global_keyboard.getKeys(keyList=['escape']):
             core.quit()
+        elif global_keyboard.getKeys(keyList=['apostrophe'], clear = True):
+            curtime = pythontime.time()
+            pulse_timing.append(curtime)
+
         # refresh the screen
         win.flip()
     
@@ -232,6 +238,9 @@ def run_blank_period(time):
         # check for quit (typically the Esc key)
         if global_keyboard.getKeys(keyList=['escape']):
             core.quit()
+        elif global_keyboard.getKeys(keyList=['apostrophe'], clear = True):
+            curtime = pythontime.time()
+            pulse_timing.append(curtime)
         # refresh the screen
         win.flip()
 
@@ -281,8 +290,11 @@ def run_trial(info):
                 stim_cue.draw() # cannot use autodraw here, otherwise the end time cannot be recorded 
                 
         # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=['escape']):
+        if global_keyboard.getKeys(keyList=['escape']):
             core.quit()
+        elif global_keyboard.getKeys(keyList=['apostrophe'], clear = True):
+            curtime = pythontime.time()
+            pulse_timing.append(curtime)
         # refresh the screen
         win.flip()
 
@@ -318,10 +330,8 @@ win = visual.Window(
 #params['frame_duration'] = 1.0 / round(params['frame_rate'])
 
 # Initialize keyboard #
-defaultKeyboard = keyboard.Keyboard()
-
-# Initialize keyboard #
 global_keyboard = keyboard.Keyboard()
+pulse_timing = []
 
 # Waiting for scanner #
 # clock to track time after MRI scanner pulse
@@ -365,6 +375,10 @@ results = pd.DataFrame({#"round" : list(range(params['n_rounds']))
                       "task_start" : params['trial_start_time'],
                       "task_end" : params['trial_end_time']})
 results.to_csv(out_csv, index=False, na_rep='n/a')
+
+with open(out_json, 'w') as json_file:
+  json.dump(pulse_timing, json_file)
+
 
 
 
