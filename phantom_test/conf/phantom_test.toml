@@ -1,0 +1,33 @@
+## Config file for sample.py project
+title = 'PhantomTest'
+sessionId = 'phantom'
+location = 'LCNI'
+
+# Scan info 
+minExpectedDicomSize = 100000       
+refBoldScanNum = ?                                  # refbold 
+strucScanNum = ?                                    # sturc
+scanNum = [?,?,?,?,?,?]                                      # Functional EPI 
+runNum = [?,?,?,?,?,?]
+numTR_func_run = 128                                # Numer of TR!! NOT SECOND!! 
+subjectName = 'sub_test'                            # This will be part of the folder name, need to be consistent with the scanner input. 
+datestr = '20211117'                                # This will be part of the folder name, need to be consistent with the scanner input. 
+sessionNum = 2                                      # the number of time the participant being scanned
+dicomNamePattern = "001_{SCAN:06d}_{TR:06d}.dcm" 
+roi = ['/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/roi/roi1_mPFC_size_620_res-02.nii.gz'] 
+
+## Directory 
+imgDir = '/home/rtfmri/Documents/bridge'
+codeDir = '/home/rtfmri/Documents/rt-cloud/projects/phantom_test'  
+
+
+## Plotting info. 
+plotTitle = 'Realtime Plot'
+plotXLabel = 'Sample #'
+plotYLabel = 'Value'
+plotXRangeLow = 0
+plotXRangeHigh = 333
+plotYRangeLow = -1
+plotYRangeHigh = 1
+plotAutoRangeX = false
+plotAutoRangeY = true
