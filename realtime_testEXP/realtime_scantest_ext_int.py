@@ -4,9 +4,10 @@
 from psychopy import core, gui, visual, data, logging, info
 from psychopy.hardware import keyboard
 from psychopy.constants import NOT_STARTED, STARTED, FINISHED
-import time, json, os
+import time, json, os, glob
 import numpy as np
 import pandas as pd
+from psychopy.hardware.emulator import launchScan
 
 #------------------------------------------------------------------------------
 # Basic inforamation
@@ -18,7 +19,8 @@ os.chdir(expDir)
 
 # Store info about the experiment session
 expInfo = {'sub_id': '', 
-           'session': ''}
+           'run': '',
+           'cond': ''}
 expInfo['psychopy_version'] = info.psychopyVersion
 expInfo['expName'] = "Realtime_scantest"
 expInfo['date'] = data.getDateStr()  # add a simple timestamp
@@ -39,9 +41,10 @@ params = {
     'date': expInfo['date'],
     'psychopy_version': expInfo['psychopy_version'],
     # stimuli parameters
-    'n_rounds': 4,
+    'n_trial': 2,
+    'dummy_trials':8.0,
     'intro_duration': 8.0,
-    'task_duration': 20.0,
+    'trial_duration': 20.0,
     'between_block_duration': 12.0,
     # display parameters
     'full_screen': True,
@@ -51,12 +54,12 @@ params = {
     'frame_duration': 0.0,
     'frame_tolerance': 0.001,
     # timing log
-    'intro_start_time': [],
-    'intro_end_time': [],
-    'task_start_time': [],
-    'task_end_time': [],
-    'IBI_start_time': [],
-    'IBI_end_time': []
+    'trial_start_time': [],
+    'trial_end_time': [],
+    # scan parameters
+    'TR': 2.0,
+    'sync_key': 'apostrophe',
+    'n_volumes': 128,
 }
 
 #------------------------------------------------------------------------------
@@ -64,20 +67,18 @@ params = {
 #------------------------------------------------------------------------------
 # extremely simple task, so just code here: 
 
-task_image = os.path.join(expDir, "image.png")
 wait_trigger_text = 'Please wait for the experiment to start :)'
-ext_text = 'Focusing on the external details: Explore what each person is doing. '
-int_text = 'Ignore the image and focusing on internal thoughts! Retrieve the episode of the last you were in a crowede restaurant.'
+ext_text = 'For this block, please focus on the EXTERNAL details of the presented image.'
+int_text = 'For this block, please focus on the Internal thoughts associated with the presented image.'
 
 #------------------------------------------------------------------------------
 # Setup results file
 #------------------------------------------------------------------------------
 
-out_dir = os.path.join(expDir, f"sub_{expInfo['sub_id']}", f"session_{expInfo['session']}")
+out_dir = os.path.join(expDir, f"sub_{expInfo['sub_id']}", f"run_{expInfo['run']}")
 if not os.path.isdir(out_dir): 
     os.makedirs(out_dir)
-out_log = os.path.join(out_dir, "timing_info_logs.json")
-out_csv = os.path.join(out_dir, "timing_output.csv")
+out_csv = os.path.join(out_dir, f"timing_output_{expInfo['cond']}.csv")
 
 #------------------------------------------------------------------------------
 # Helper function
@@ -141,9 +142,11 @@ def shift_time_to_trigger(components, t_sync):
             comp.t_stop -= t_sync
 
 
-def wait_trigger():
+def instruction(text):
 
     # initialize routine clock
+    routine_countdown.reset()
+    routine_countdown.add(params['intro_duration'])
     routinue_clock = core.Clock()
 
     # initialize constants
@@ -151,143 +154,47 @@ def wait_trigger():
     frame_id = -1
 
     # initialize stimuli: wait trigger
-    stim_wait = visual.TextStim(
+    stim_instruction = visual.TextStim(
         win=win,
         name='stim_wait',
-        text=wait_trigger_text,
+        text=text,
         font='Arial',
         pos=(0, 0),
-        height=0.1,
+        height=0.05,
         color='black'
     )
-    # trigger keyboard
-    wait_trigger = keyboard.Keyboard()
 
     # initialize components attributes and some variables
-    routine_components = [stim_wait, wait_trigger]
-    initialize_routinue_status(routine_components, routinue_clock)
-
-    # run routine
-    while continue_routine:
-        # get timing
-        t_this_flip, t_this_flip_global, frame_id, _ = timing_per_flip(routinue_clock, frame_id)
-        # wait for stimuli to start (if there's a delay inside the routinue)
-        if (stim_wait.status == NOT_STARTED) and (t_this_flip >= 0.0 - 0.001):
-            start_component(stim_wait, t_this_flip_global, frame_id)
-            stim_wait.status = STARTED
-        # draw stimuli for each frame if the elapsed time less than designed duration
-        if stim_wait.status == STARTED:
-            stim_wait.draw()
-            # update timing information
-            update_component_timing(stim_wait, frame_id)
-        # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=['escape']):
-            core.quit()
-        # refresh the screen
-        win.flip()
-        # deal with response
-        kb_wait_on_flip = False
-        if (wait_trigger.status == NOT_STARTED) and (t_this_flip >= 0.0 - 0.001):
-            start_component(wait_trigger, t_this_flip_global, frame_id)
-            wait_trigger.status = STARTED
-            # start keyboard checking and timing on next flip
-            kb_wait_on_flip = True
-            # t=0 on next screen flip
-            win.callOnFlip(wait_trigger.clock.reset)
-            # clear events on next screen flip
-            win.callOnFlip(wait_trigger.clearEvents, eventType='keyboard')
-        if (wait_trigger.status == STARTED) and (not kb_wait_on_flip):
-            update_component_timing(wait_trigger, frame_id)
-            # record responses
-            key_press = wait_trigger.getKeys(keyList=['apostrophe'], waitRelease=False)
-            # only keep the last key press
-            if len(key_press):
-                # a response ends the routine
-                continue_routine = False
-
-
-def run_task(task_cond):
-
-    # initialize routine clock
-    routine_countdown.reset()
-    routine_countdown.add(params['intro_duration'] + params['task_duration'])
-    routinue_clock = core.Clock()
-
-    # initialize constants
-    continue_routine = True
-    frame_id = -1
-
-    if task_cond == "external": 
-        this_text = ext_text
-    if task_cond == "internal":
-        this_text = int_text
-    # initialize stimuli: recall cue
-    stim_txt = visual.TextStim(
-        win=win,
-        name='stim_txt',
-        text=this_text,
-        font='Arial',
-        pos=(0, 0),
-        height=0.1,
-        color='black')
-
-    stim_cue = visual.ImageStim(
-        win=win,
-        name='stim_cue', 
-        image=task_image, 
-        mask=None,
-        ori=0, pos=(0, 0), size=(1.5, 1.5),
-        color=[1,1,1], colorSpace='rgb', opacity=1,
-        flipHoriz=False, flipVert=False,
-        texRes=512, interpolate=True, depth=-1.0)
-
-    # initialize components attributes and some variables
-    routine_components = [stim_txt, stim_cue]
-    initialize_routinue_status(routine_components, routinue_clock)
-
+    initialize_routinue_status([stim_instruction], routinue_clock)
 
     # run routine
     while continue_routine and routine_countdown.getTime() > 0:
         # get timing
         t_this_flip, t_this_flip_global, frame_id, _ = timing_per_flip(routinue_clock, frame_id)
         # wait for stimuli to start (if there's a delay inside the routinue)
-        if (stim_txt.status == NOT_STARTED) and (t_this_flip >= 0.0 - 0.001):
-            start_component(stim_txt, t_this_flip_global, frame_id) # component.t_start and component.t_start_globle to be t_this_flip_global
-            stim_txt.status = STARTED
+        if (stim_instruction.status == NOT_STARTED) and (t_this_flip >= 0.0 - 0.001):
+            start_component(stim_instruction, t_this_flip_global, frame_id)
+            stim_instruction.status = STARTED
         # draw stimuli for each frame if the elapsed time less than designed duration
-        if stim_txt.status == STARTED:
-            if t_this_flip_global <= stim_txt.t_start_global + params['intro_duration'] - 0.001:
-                # END THIS and update stopping timing information
-                update_component_timing(stim_txt, frame_id) # update the end time for each flip 
-                stim_txt.draw()
-                
-        if (stim_cue.status == NOT_STARTED) and (t_this_flip >= params['intro_duration'] - 0.001):
-            start_component(stim_cue, t_this_flip_global, frame_id)
-            stim_cue.status = STARTED
-        if stim_cue.status == STARTED:
-            if t_this_flip_global <= stim_cue.t_start_global + params['task_duration'] - 0.001:
-                # END THIS and update stopping timing information
-                update_component_timing(stim_cue, frame_id) # update the end time for each flip 
-                stim_cue.draw() # cannot use autodraw here, otherwise the end time cannot be recorded 
-                
+        if stim_instruction.status == STARTED:
+            if t_this_flip_global <= stim_instruction.t_start_global + params['intro_duration'] - 0.001:
+                stim_instruction.draw()
+                # update timing information
+                update_component_timing(stim_instruction, frame_id)
         # check for quit (typically the Esc key)
-        if defaultKeyboard.getKeys(keyList=['escape']):
+        if global_keyboard.getKeys(keyList=['escape']):
             core.quit()
         # refresh the screen
         win.flip()
-
+    
     # shift time stamp for t_start and t_stop, make t0 = scanner trigger time
-    shift_time_to_trigger(routine_components, params['trigger_time_global'])
-    params['intro_start_time'].append(stim_txt.t_start)
-    params['intro_end_time'].append(stim_txt.t_stop)
-    params['task_start_time'].append(stim_cue.t_start)
-    params['task_end_time'].append(stim_cue.t_stop)
+    shift_time_to_trigger([stim_instruction], params['scanner_trigger_time_global'])
 
-def run_ibi():
+def run_blank_period(time):
 
     # initialize routine clock
     routine_countdown.reset()
-    routine_countdown.add(params['between_block_duration'])
+    routine_countdown.add(time)
     routinue_clock = core.Clock()
 
     # initialize constants
@@ -306,8 +213,7 @@ def run_ibi():
     )
 
     # initialize components attributes and some variables
-    routine_components = [stim_fixation]
-    initialize_routinue_status(routine_components, routinue_clock)
+    initialize_routinue_status([stim_fixation], routinue_clock)
 
     # run routine
     while continue_routine and routine_countdown.getTime() > 0:
@@ -319,10 +225,61 @@ def run_ibi():
             stim_fixation.status = STARTED
         # draw stimuli for each frame if the elapsed time less than designed duration
         if stim_fixation.status == STARTED:
-            if t_this_flip_global <= stim_fixation.t_start_global + params['between_block_duration'] - 0.001:
+            if t_this_flip_global <= stim_fixation.t_start_global + time - 0.001:
                 stim_fixation.draw()
                 # update timing information
                 update_component_timing(stim_fixation, frame_id)
+        # check for quit (typically the Esc key)
+        if global_keyboard.getKeys(keyList=['escape']):
+            core.quit()
+        # refresh the screen
+        win.flip()
+
+    # shift time stamp for t_start and t_stop, make t0 = scanner trigger time
+    shift_time_to_trigger([stim_fixation], params['scanner_trigger_time_global'])
+
+def run_trial(info):
+
+    task_image = info['img']
+    # initialize routine clock
+    routine_countdown.reset()
+    routine_countdown.add(params['trial_duration'])
+    routinue_clock = core.Clock()
+
+    # initialize constants
+    continue_routine = True
+    frame_id = -1
+
+    stim_cue = visual.ImageStim(
+        win=win,
+        name='stim_cue', 
+        image=task_image, 
+        mask=None,
+        ori=0, pos=(0, 0), size=(1.5, 1),
+        color=[1,1,1], colorSpace='rgb', opacity=1,
+        flipHoriz=False, flipVert=False,
+        texRes=512, interpolate=True, depth=-1.0)
+
+    # initialize components attributes and some variables
+    routine_components = [stim_cue]
+    initialize_routinue_status(routine_components, routinue_clock)
+
+
+    # run routine
+    while continue_routine and routine_countdown.getTime() > 0:
+        # get timing
+        t_this_flip, t_this_flip_global, frame_id, _ = timing_per_flip(routinue_clock, frame_id)
+        # wait for stimuli to start (if there's a delay inside the routinue)
+                
+        if (stim_cue.status == NOT_STARTED) and (t_this_flip >= 0.0 - 0.001):
+            start_component(stim_cue, t_this_flip_global, frame_id)
+            stim_cue.status = STARTED
+        if stim_cue.status == STARTED:
+            if t_this_flip_global <= stim_cue.t_start_global + params['trial_duration'] - 0.001:
+                # END THIS and update stopping timing information
+                update_component_timing(stim_cue, frame_id) # update the end time for each flip 
+                stim_cue.draw() # cannot use autodraw here, otherwise the end time cannot be recorded 
+                
         # check for quit (typically the Esc key)
         if defaultKeyboard.getKeys(keyList=['escape']):
             core.quit()
@@ -330,13 +287,14 @@ def run_ibi():
         win.flip()
 
     # shift time stamp for t_start and t_stop, make t0 = scanner trigger time
-    shift_time_to_trigger(routine_components, params['trigger_time_global'])
-    params['IBI_start_time'].append(stim_fixation.t_start)
-    params['IBI_end_time'].append(stim_fixation.t_stop)
+    shift_time_to_trigger(routine_components, params['scanner_trigger_time_global'])
+    params['trial_start_time'].append(stim_cue.t_start)
+    params['trial_end_time'].append(stim_cue.t_stop)
 
 
 
-#------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
 # Main experiment
 #------------------------------------------------------------------------------
 
@@ -362,28 +320,50 @@ win = visual.Window(
 # Initialize keyboard #
 defaultKeyboard = keyboard.Keyboard()
 
-wait_trigger()
-params['trigger_time_global'] = logging.defaultClock.getTime()
+# Initialize keyboard #
+global_keyboard = keyboard.Keyboard()
+
+# Waiting for scanner #
+# clock to track time after MRI scanner pulse
+scan_clock = core.Clock()
+# clock to track time remaining of each (non-slip) routine
+routine_countdown = core.CountdownTimer()
+mri_setting = {
+    'TR': params['TR'],
+    'volumes': params['n_volumes'],
+    'sync': params['sync_key']
+}
+launchScan(win=win, settings=mri_setting, globalClock=scan_clock, mode='scan', wait_msg = wait_trigger_text)
+params['scanner_trigger_time_global'] = logging.defaultClock.getTime()
 
 # clock to track time after MRI scanner pulse
 global_clock = core.Clock()
 # clock to track time remaining of each (non-slip) routine
 routine_countdown = core.CountdownTimer()
 
-for round in range(params['n_rounds']):
-    run_task("external")
-    run_ibi()
-    run_task("internal")
-    run_ibi()
+images = glob.glob(os.path.join(expDir, "stimuli", "*"))
+
+run_blank_period(params['dummy_trials'])
+for round in range(2):
+
+    instruction(ext_text)
+    for this_trial in range(params['n_trial']):
+        info = {"img" : images[round*2 + this_trial]}
+        run_trial(info)
+    run_blank_period(params['between_block_duration'])
+
+    instruction(int_text)
+    for this_trial in range(params['n_trial']):
+        info = {"img" : images[round*2 + this_trial]}
+        run_trial(info)
+    run_blank_period(params['between_block_duration'])
+    
+run_blank_period(params['dummy_trials'])
 
 
-results = pd.DataFrame({#"round" : list(range(params['n_rounds'])),
-                      "intro_start" : params['intro_start_time'],
-                      "intro_end" : params['intro_end_time'],
-                      "task_start" : params['task_start_time'],
-                      "task_end" : params['task_end_time'],
-                      "IBI_start": params['IBI_start_time'],
-                      "IBI_end": params['IBI_end_time']})
+results = pd.DataFrame({#"round" : list(range(params['n_rounds']))
+                      "task_start" : params['trial_start_time'],
+                      "task_end" : params['trial_end_time']})
 results.to_csv(out_csv, index=False, na_rep='n/a')
 
 
