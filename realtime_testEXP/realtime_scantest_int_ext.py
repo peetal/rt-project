@@ -20,7 +20,7 @@ os.chdir(expDir)
 # Store info about the experiment session
 expInfo = {'sub_id': '', 
            'run': '',
-           'cond': 'ext_int'}
+           'cond': 'int_ext'}
 expInfo['psychopy_version'] = info.psychopyVersion
 expInfo['expName'] = "Realtime_scantest"
 expInfo['date'] = data.getDateStr()  # add a simple timestamp
@@ -346,13 +346,13 @@ images = glob.glob(os.path.join(expDir, "stimuli", "*"))
 run_blank_period(params['dummy_trials'])
 for round in range(2):
 
-    instruction(ext_text)
+    instruction(int_text)
     for this_trial in range(params['n_trial']):
         info = {"img" : images[round*2 + this_trial]}
         run_trial(info)
     run_blank_period(params['between_block_duration'])
 
-    instruction(int_text)
+    instruction(ext_text)
     for this_trial in range(params['n_trial']):
         info = {"img" : images[round*2 + this_trial]}
         run_trial(info)
