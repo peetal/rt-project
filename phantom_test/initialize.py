@@ -110,7 +110,7 @@ def initialize_cfg(cfg):
     # Add new directorys
     cfg.sub_dir = os.path.join(cfg.codeDir, 'data', cfg.subjectName) # directory to store imaging data for a subject
     cfg.struc_dir = os.path.join(cfg.sub_dir, 'struc_nii')           # Only need to scan structural image for one time. 
-    cfg.session_dir = os.path.join(cfg.sub_dir, f"sesson{cfg.sessionNum}")
+    cfg.session_dir = os.path.join(cfg.sub_dir, f"session{cfg.sessionNum}")
     cfg.func_dir = os.path.join(cfg.session_dir, 'func_nii')         # function directory under each session 
     cfg.ref_bold = os.path.join(cfg.func_dir, 'ref_bold')            # reference bold for each session 
     cfg.ref_bold_temp_dir = os.path.join(cfg.ref_bold, 'temp')       # temp folder for storing temp files 

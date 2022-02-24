@@ -3,9 +3,9 @@
 # 	name of input image
 --in=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/struc_nii/Struc.nii.gz
 # 	name of file containing affine transform
---aff=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/func_nii/ref_bold/temp/struc2standard.mat
+--aff=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/session2/func_nii/ref_bold/temp/struc2standard.mat
 # 	name of output file with field coefficients
---cout=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/func_nii/ref_bold/temp/struc2standard_warp.nii.gz
+--cout=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/sub_test/session2/func_nii/ref_bold/temp/struc2standard_warp.nii.gz
 # name of file with mask in reference space
 --refmask=/home/rtfmri/Documents/rt-cloud/projects/phantom_test/data/standard/tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz
 # If =1, use implicit masking based on value in --ref image. Default =1
