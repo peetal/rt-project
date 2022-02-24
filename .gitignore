@@ -4,3 +4,4 @@
 .DS_Store
 **/.DS_Store
 phantom_test/data/sub_test/
+phantom_test/test.py
